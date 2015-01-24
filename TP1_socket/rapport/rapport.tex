@@ -1,0 +1,118 @@
+\documentclass{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage[francais]{babel, varioref}
+\usepackage{graphicx}
+\usepackage{listings}
+
+\usepackage{xspace}
+\usepackage{amssymb}
+\usepackage{calc}
+\usepackage{listingsutf8}
+\usepackage{color}
+\usepackage{xcolor}
+
+%%%%%%%%%%%%%%%%%%%%%
+\usepackage{url}
+\usepackage[top=2.1cm,bottom=2.2cm,left=2cm,right=2cm]{geometry}
+\usepackage[final]{pdfpages}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%pour la coloration du code
+
+\definecolor{colFond}{rgb}{0.8,0.9,0.9}
+\definecolor{hellgelb}{rgb}{1,1,0.8}
+\definecolor{colKeys}{rgb}{0,0,1}
+\definecolor{colIdentifier}{rgb}{0,0,0}
+\definecolor{colComments}{rgb}{0,0.5,0}
+\definecolor{colString}{rgb}{0.62,0.12,0.94}
+
+\lstset{
+  language=c,
+  float=hbp,
+  basicstyle=\ttfamily\small,
+  identifierstyle=\color{colIdentifier},
+  keywordstyle=\bf \color{colKeys},
+  stringstyle=\color{colString},
+  commentstyle=\color{colComments},
+  columns=flexible,
+  tabsize=3,
+  frame=single,
+  frame=shadowbox,
+  rulesepcolor=\color[gray]{0.5},
+  extendedchars=true,
+  showspaces=false,
+  showstringspaces=false,
+  numbers=left,
+  firstnumber=1,
+  numberstyle=\tiny,
+  breaklines=true,
+  backgroundcolor=\color{hellgelb},
+  captionpos=b,
+}
+
+\title{Info Rep TP1-Sockets}
+\author{Alexandre \bsc{Brehmer} \& Christophe \bsc{Cluizel}}
+
+\begin{document}
+\maketitle
+
+\begin{lstlisting}
+import java.io.*;
+import java.net.*;
+
+public class ClientUDP
+{
+  final static int taille = 1024;
+  final static byte buffer[] = new byte[taille];
+
+  public static void main(String args[]) throws Exception
+    {
+      String message = args[0] + args[1] + args[2] + "\n";  // creation du message
+      InetAddress serveur = InetAddress.getByName("172.18.17.178"); // assignation de l'adresse ip du serveur
+      int length = message.length();  // recupere la taille du message
+      byte buffer[] = message.getBytes(); // place le message dans le buffer
+      DatagramPacket dataSent = new DatagramPacket(buffer, length, serveur, 2000);  // creation du datagramme
+      DatagramSocket socket = new DatagramSocket(); // creation du socket
+      socket.send(dataSent);  // envoi des donnees
+      DatagramPacket dataReceived = new DatagramPacket(new byte[100], 100); // 100 est le nombre de caracteres que l'on peut recevoir
+      socket.receive(dataReceived); // reception des donnees = reponse du serveur
+      System.out.println("Data received : " + new String(dataReceived.getData()));
+      System.out.println("From : " + dataReceived.getAddress() + ":" + dataReceived.getPort());
+    }
+}
+\end{lstlisting}
+
+\begin{lstlisting}[language=c]
+
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+int main(int argc, char**argv)
+{
+    int sockfd,n;
+    struct sockaddr_in servaddr,cliaddr;
+    socklen_t len;
+    char mesg[1000];
+    sockfd=socket(AF_INET,SOCK_DGRAM,0);
+    bzero(&servaddr,sizeof(servaddr));
+    servaddr.sin_family = AF_INET;
+    servaddr.sin_addr.s_addr=htonl(INADDR_ANY);
+    servaddr.sin_port=htons(2000);
+    bind(sockfd,(struct sockaddr *)&servaddr,sizeof(servaddr));
+
+    for (;;)
+    {
+        len = sizeof(cliaddr);
+        n = recvfrom(sockfd,mesg,1000,0,(struct sockaddr *)&cliaddr,&len);
+        mesg[n] = 0;
+    }
+}
+\end{lstlisting}
+
+
+\end{document}
