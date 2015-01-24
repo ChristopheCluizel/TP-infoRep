@@ -57,18 +57,15 @@
 
 \begin{document}
 \maketitle
-
-\begin{lstlisting}
+Client UDP Java
+\begin{lstlisting}[language=JAVA]
 import java.io.*;
 import java.net.*;
 
-public class ClientUDP
-{
+public class ClientUDP{
   final static int taille = 1024;
   final static byte buffer[] = new byte[taille];
-
-  public static void main(String args[]) throws Exception
-    {
+  public static void main(String args[]) throws Exception{
       String message = args[0] + args[1] + args[2] + "\n";  // creation du message
       InetAddress serveur = InetAddress.getByName("172.18.17.178"); // assignation de l'adresse ip du serveur
       int length = message.length();  // recupere la taille du message
@@ -84,16 +81,14 @@ public class ClientUDP
 }
 \end{lstlisting}
 
+Serveur UDP C
 \begin{lstlisting}[language=c]
-
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
-int main(int argc, char**argv)
-{
+int main(int argc, char**argv){
     int sockfd,n;
     struct sockaddr_in servaddr,cliaddr;
     socklen_t len;
@@ -104,13 +99,73 @@ int main(int argc, char**argv)
     servaddr.sin_addr.s_addr=htonl(INADDR_ANY);
     servaddr.sin_port=htons(2000);
     bind(sockfd,(struct sockaddr *)&servaddr,sizeof(servaddr));
-
-    for (;;)
-    {
+    for (;;) {
         len = sizeof(cliaddr);
         n = recvfrom(sockfd,mesg,1000,0,(struct sockaddr *)&cliaddr,&len);
+        char res[100];
+        sprintf(res,"%s","Bonjour \n\r");
+        sendto(sockfd,res,sizeof(res),0,(struct sockaddr *)&cliaddr,sizeof(cliaddr));
         mesg[n] = 0;
     }
+}
+\end{lstlisting}
+Client TCP Java
+\begin{lstlisting}[language=JAVA]
+import java.io.*;
+import java.util.*;
+import java.net.*;
+public  class ClientTCP {
+  public static void main(String[] args) throws Exception {
+    Socket s;
+    PrintStream socketOutputStream;
+    BufferedReader socketInputStream;
+    StringTokenizer tokens;
+    int erreur; String reponse;
+    s = new Socket("172.18.17.178", 2000);
+    socketOutputStream = new PrintStream(s.getOutputStream());
+    socketOutputStream.print("Bonjour\n");
+    socketInputStream = new BufferedReader(new InputStreamReader(s.getInputStream()));
+    if((reponse = socketInputStream.readLine()) != null)
+      System.out.println("reponse:" + reponse);
+    else
+      System.out.println("Reponse vide !");
+  }
+}
+\end{lstlisting}
+
+Serveur TCP C
+\begin{lstlisting}[language=c]
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <stdio.h>
+
+int main(int argc, char**argv){
+   int listenfd,connfd,n;
+   struct sockaddr_in servaddr,cliaddr;
+   socklen_t clilen;
+   pid_t     childpid;
+   char mesg[1000];
+   listenfd=socket(AF_INET,SOCK_STREAM,0);
+   bzero(&servaddr,sizeof(servaddr));
+   servaddr.sin_family = AF_INET;
+   servaddr.sin_addr.s_addr=htonl(INADDR_ANY);
+   servaddr.sin_port=htons(2000);
+   bind(listenfd,(struct sockaddr *)&servaddr,sizeof(servaddr));//Creation de la socket
+   listen(listenfd,2000);//ecoute sur le port 2000
+   for(;;){
+      clilen=sizeof(cliaddr);
+      connfd = accept(listenfd,(struct sockaddr *)&cliaddr,&clilen);//acceptation de la connection
+      if ((childpid = fork()) == 0){//creation d'un fils
+         close (listenfd);
+         for(;;){
+            n = recvfrom(connfd,mesg,1000,0,(struct sockaddr *)&cliaddr,&clilen);
+            mesg[n] = 0;
+            strcpy(res,"Bonjour\n\0");
+            sendto(connfd,res,sizeof(res),0,(struct sockaddr *)&cliaddr,sizeof(cliaddr));
+         }
+      }
+      close(connfd);
+   }
 }
 \end{lstlisting}
 
