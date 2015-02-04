@@ -1,0 +1,12 @@
+module HelloWorld {
+  interface Hello {
+    exception ChaineVide { };
+    exception Negatif { };
+    exception DivisionParZero { };
+    string sayHello(in string name) raises (ChaineVide);
+    unsigned long addition(in unsigned long a, in unsigned long b) raises (Negatif);
+    unsigned long soustraction(in unsigned long a, in unsigned long b) raises (Negatif);
+    unsigned long multiplication(in unsigned long a, in unsigned long b) raises (Negatif);
+    unsigned long division(in unsigned long a, in unsigned long b) raises (Negatif, DivisionParZero);
+  };
+};
