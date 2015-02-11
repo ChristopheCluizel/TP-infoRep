@@ -1,0 +1,173 @@
+\documentclass{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage[francais]{babel, varioref}
+\usepackage{graphicx}
+\usepackage{listings}
+
+\usepackage{xspace}
+\usepackage{amssymb}
+\usepackage{calc}
+\usepackage{listingsutf8}
+\usepackage{color}
+\usepackage{xcolor}
+
+%%%%%%%%%%%%%%%%%%%%%
+\usepackage{url}
+\usepackage[top=2.1cm,bottom=2.2cm,left=2cm,right=2cm]{geometry}
+\usepackage[final]{pdfpages}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%pour la coloration du code
+
+\definecolor{colFond}{rgb}{0.8,0.9,0.9}
+\definecolor{hellgelb}{rgb}{1,1,0.8}
+\definecolor{colKeys}{rgb}{0,0,1}
+\definecolor{colIdentifier}{rgb}{0,0,0}
+\definecolor{colComments}{rgb}{0,0.5,0}
+\definecolor{colString}{rgb}{0.62,0.12,0.94}
+
+\lstset{
+  language=c,
+  float=hbp,
+  basicstyle=\ttfamily\small,
+  identifierstyle=\color{colIdentifier},
+  keywordstyle=\bf \color{colKeys},
+  stringstyle=\color{colString},
+  commentstyle=\color{colComments},
+  columns=flexible,
+  tabsize=3,
+  frame=single,
+  frame=shadowbox,
+  rulesepcolor=\color[gray]{0.5},
+  extendedchars=true,
+  showspaces=false,
+  showstringspaces=false,
+  numbers=left,
+  firstnumber=1,
+  numberstyle=\tiny,
+  breaklines=true,
+  backgroundcolor=\color{hellgelb},
+  captionpos=b,
+}
+
+\title{Info Rep TP2-Corba}
+\author{Alexandre \bsc{Brehmer} \& Christophe \bsc{Cluizel}}
+
+\begin{document}
+\maketitle
+Corba est une librairie multi-langage permettant de simplifier l'appel de fonction à distance ainsi que la synchronisation des objets. Sont fonctionnement est décrit dans 4 fichiers :
+\begin{itemize}
+\item client.java\\
+	Il fait appel aux fonctions en se connectant au serveur.
+\item serveur.java\\
+	Il met à disposition les fonctions en démarrant Corba.
+\item application.idl\\
+	C'est ici qu'un déclaration des fonctions est faite pour les rendre accessibles à tout langages de programmation.
+\item servant.java\\
+	C'est ici que les fonctions sont implémentées
+\end{itemize}
+
+helloClient.java
+\begin{lstlisting}[language=JAVA]
+import HelloWorld.*;
+import org.omg.CORBA.*;
+public class HelloClient {
+  public static void main(String args[]) {
+    try {
+      String orbArguments[] = new String[0];
+      ORB orb = ORB.init(orbArguments, null);
+      org.omg.CORBA.Object corbaObject = orb.string_to_object(args[0]);
+      Hello corbaHelloObject = HelloHelper.narrow(corbaObject);
+       System.out.println(corbaHelloObject.sayHello(""));
+        if(args[2].contains("+"))
+		System.out.println(corbaHelloObject.addition(Integer.parseInt(args[1]),Integer.parseInt(args[3])));
+    }
+    catch (Exception e) {
+      System.err.println("Error : "+e);
+    }
+  }
+}
+\end{lstlisting}
+
+helloServeur.java
+\begin{lstlisting}[language=JAVA]
+import HelloWorld.*;
+import org.omg.CORBA.*;
+import org.omg.PortableServer.*;
+import org.omg.PortableServer.POA;
+public class HelloServer {
+  public static void main(String args[]) {
+    try {
+      String orbArguments[]=new String[0];
+      ORB orb=ORB.init(orbArguments,null);
+      POA rootpoa = POAHelper.narrow(orb.resolve_initial_references("RootPOA"));
+      rootpoa.the_POAManager().activate();
+      HelloServant helloServant=new HelloServant();
+      Hello corbaHelloObject = HelloHelper.narrow(rootpoa.servant_to_reference(helloServant));
+      System.out.println(orb.object_to_string(corbaHelloObject));
+      orb.run();
+    }
+    catch (Exception e) {
+      System.err.println("Error : "+e);
+    }
+  }
+}
+\end{lstlisting}
+
+helloServant.java
+\begin{lstlisting}[language=JAVA]
+import HelloWorld.*;
+import HelloWorld.HelloPackage.*;
+class HelloServant extends HelloPOA {
+  public String sayHello(String name) throws ChaineVide {
+    if(name.equals(""))
+	throw new ChaineVide();
+    System.out.println("Request from " + name);
+    return "Hello "+name;
+  }
+  public int addition(int a,int b) throws Negatif {
+	  if(a<0 || b<0) throw new Negatif();
+	  return a+b;
+  }  
+  public int soustraction(int a,int b) throws Negatif {
+	  if(a<0 || b<0 || a-b<0) throw new Negatif();
+	  return a-b;
+  }  
+  public int multiplication(int a,int b) throws Negatif {
+	  if(a<0 || b<0) throw new Negatif();
+	  return a*b;
+  }  
+  public int division(int a,int b) throws Negatif, DivisionParZero  {
+	  if(a<0 || b<0) throw new Negatif();
+	  if(b==0) throw new DivisionParZero();
+	  return a/b;
+  }  
+}
+
+
+\end{lstlisting}
+
+helloWorld.idl
+\begin{lstlisting}[language=JAVA]
+module HelloWorld {
+  interface Hello {
+    exception ChaineVide { };
+    exception Negatif { };
+    exception DivisionParZero { };
+    string sayHello(in string name) raises (ChaineVide);
+    unsigned long addition(in unsigned long a, in unsigned long b) raises (Negatif);
+    unsigned long soustraction(in unsigned long a, in unsigned long b) raises (Negatif);
+    unsigned long multiplication(in unsigned long a, in unsigned long b) raises (Negatif);
+    unsigned long division(in unsigned long a, in unsigned long b) raises (Negatif, DivisionParZero);
+  };
+};
+\end{lstlisting}
+
+La compilation s'effectue avec la commande:
+\begin{lstlisting}
+QU'EST CE QUE C'EST LA COMMANDE?
+\end{lstlisting}
+
+\end{document}
