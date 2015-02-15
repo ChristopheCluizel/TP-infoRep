@@ -29,7 +29,7 @@
 \definecolor{colString}{rgb}{0.62,0.12,0.94}
 
 \lstset{
-  language=c,
+  language=bash,
   float=hbp,
   basicstyle=\ttfamily\small,
   identifierstyle=\color{colIdentifier},
@@ -57,17 +57,13 @@
 
 \begin{document}
 \maketitle
-Corba est une librairie multi-langage permettant de simplifier l'appel de fonction à distance ainsi que la synchronisation des objets. Sont fonctionnement est décrit dans 4 fichiers :
-\begin{itemize}
-\item client.java\\
-	Il fait appel aux fonctions en se connectant au serveur.
-\item serveur.java\\
-	Il met à disposition les fonctions en démarrant Corba.
-\item application.idl\\
-	C'est ici qu'un déclaration des fonctions est faite pour les rendre accessibles à tout langages de programmation.
-\item servant.java\\
-	C'est ici que les fonctions sont implémentées
-\end{itemize}
+Corba est une librairie multi-langage permettant de simplifier l'appel de fonction à distance ainsi que la synchronisation des objets. Son fonctionnement est décrit dans 4 fichiers:
+\begin{description}
+\item [client.java:] Il fait appel aux fonctions en se connectant au serveur;
+\item [serveur.java:] Il met à disposition les fonctions en démarrant Corba;
+\item [application.idl:] C'est ici qu'une déclaration des fonctions est faite pour les rendre accessibles à tout langages de programmation;
+\item [servant.java:] C'est ici que les fonctions sont implémentées.
+\end{description}
 
 helloClient.java
 \begin{lstlisting}[language=JAVA]
@@ -130,20 +126,20 @@ class HelloServant extends HelloPOA {
   public int addition(int a,int b) throws Negatif {
 	  if(a<0 || b<0) throw new Negatif();
 	  return a+b;
-  }  
+  }
   public int soustraction(int a,int b) throws Negatif {
 	  if(a<0 || b<0 || a-b<0) throw new Negatif();
 	  return a-b;
-  }  
+  }
   public int multiplication(int a,int b) throws Negatif {
 	  if(a<0 || b<0) throw new Negatif();
 	  return a*b;
-  }  
+  }
   public int division(int a,int b) throws Negatif, DivisionParZero  {
 	  if(a<0 || b<0) throw new Negatif();
 	  if(b==0) throw new DivisionParZero();
 	  return a/b;
-  }  
+  }
 }
 
 
@@ -165,9 +161,8 @@ module HelloWorld {
 };
 \end{lstlisting}
 
-La compilation s'effectue avec la commande:
-\begin{lstlisting}
-QU'EST CE QUE C'EST LA COMMANDE?
-\end{lstlisting}
+On génère les classes côté client avec la commande \textbf{``idlj -fclient mon\_fichier.idl''} et côté serveur avec \textbf{``idlj -fserver | -fall mon\_fichier.idl''}. La compilation s'effectue avec la commande \textbf{``javac *.class''}. \\
+
+On commence par lancer le serveur à l'aide de \textbf{``java HelloServer''}, on copie l'intégralité de son IOR (le mot ``IOR:'' y compris). On lance le client \textbf{``java HelloClient''} avec comme paramètres le numéro IOR du serveur, le 1er opérande, l'opérateur et le deuxième opérande, i.e. [N\degres\space IOR] 5 + 4
 
 \end{document}
