@@ -1,0 +1,213 @@
+\documentclass{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage[francais]{babel, varioref}
+\usepackage{graphicx}
+\usepackage{listings}
+
+\usepackage{xspace}
+\usepackage{amssymb}
+\usepackage{calc}
+\usepackage{listingsutf8}
+\usepackage{color}
+\usepackage{xcolor}
+
+%%%%%%%%%%%%%%%%%%%%%
+\usepackage{url}
+\usepackage[top=0.1cm,bottom=0.1cm,left=0.6cm,right=0.2cm]{geometry}
+\usepackage[final]{pdfpages}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%pour la coloration du code
+
+\definecolor{colFond}{rgb}{0.8,0.9,0.9}
+\definecolor{hellgelb}{rgb}{1,1,0.8}
+\definecolor{colKeys}{rgb}{0,0,1}
+\definecolor{colIdentifier}{rgb}{0,0,0}
+\definecolor{colComments}{rgb}{0,0.5,0}
+\definecolor{colString}{rgb}{0.62,0.12,0.94}
+
+\lstset{
+  language=JAVA,
+  float=hbp,
+  basicstyle=\ttfamily\small,
+  identifierstyle=\color{colIdentifier},
+  keywordstyle=\bf \color{colKeys},
+  stringstyle=\color{colString},
+  commentstyle=\color{colComments},
+  columns=flexible,
+  tabsize=3,
+  frame=single,
+  frame=shadowbox,
+  rulesepcolor=\color[gray]{0.5},
+  extendedchars=true,
+  showspaces=false,
+  showstringspaces=false,
+  %numbers=left,
+  firstnumber=1,
+  numberstyle=\tiny,
+  breaklines=true,
+  backgroundcolor=\color{hellgelb},
+  captionpos=b,
+}
+
+\title{\vspace{-5ex}Info Rep TP4-RMI\vspace{-2ex}}
+\author{Alexandre \bsc{Brehmer} \& Christophe \bsc{Cluizel}}
+
+\begin{document}
+\maketitle
+\vspace{-6ex}
+Réaliser une calculatrice distribuée pour nombres complexes à l'aide de RMI\@. Avec un serveur en Java, un service de nommage et un client en Java. Pour cela, il faut 4 dossiers: client, serveur, rmiregistry (service de nommage) et calculatriceComplexe. Il faut 5 fichiers: Client.java, Serveur.java, Calculatrice.java, CalculatriceImpl.java et Complexe.java. \\
+
+Fichier \emph{compile.sh}
+\vspace{-1.5ex}
+\begin{lstlisting}[language=bash]
+javac calculatriceComplexe/*.java
+cp calculatriceComplexe/*.class serveur/calculatriceComplexe/
+
+cp calculatriceComplexe/Calculatrice.class client/calculatriceComplexe/
+cp calculatriceComplexe/Complexe.class client/calculatriceComplexe/
+
+cp calculatriceComplexe/Calculatrice.class rmiregistry/calculatriceComplexe/
+cp calculatriceComplexe/Complexe.class rmiregistry/calculatriceComplexe/
+
+javac serveur/*.java
+javac client/*.java
+\end{lstlisting}
+\vspace{-1ex}
+
+Fichier \emph{Calculatrice.java} pour décrire les services proposés.
+% \vspace{-1.5ex}
+\begin{lstlisting}
+package calculatriceComplexe;
+
+import java.rmi.Remote;
+import java.rmi.RemoteException;
+import java.io.Serializable;
+
+public interface Calculatrice extends Remote, Serializable {
+  public Complexe addition(Complexe a, Complexe b) throws RemoteException;
+  public Complexe soustraction(Complexe a, Complexe b) throws RemoteException;
+  public Complexe multiplication(Complexe a, Complexe b) throws RemoteException;
+  public Complexe division(Complexe a, Complexe b) throws RemoteException;
+}
+\end{lstlisting}
+
+Fichier \emph{CalculatriceImpl.java} pour l'implémentation des services de la calculatrice.
+% \vspace{-1.5ex}
+\begin{lstlisting}
+package calculatriceComplexe;
+
+public class CalculatriceImpl implements Calculatrice {
+  public Complexe addition(Complexe a, Complexe b) {
+    return a.plus(b);
+  }
+  public Complexe soustraction(Complexe a, Complexe b) {
+     return a.minus(b);
+  }
+  public Complexe multiplication(Complexe a, Complexe b) {
+    return a.times(b);
+  }
+  public Complexe division(Complexe a, Complexe b) {
+    return a.divides(b);
+  }
+}
+\end{lstlisting}
+
+Fichier \emph{Serveur.java}.
+% \vspace{-1.5ex}
+\begin{lstlisting}
+import java.rmi.registry.LocateRegistry;
+import java.rmi.registry.Registry;
+import java.rmi.server.UnicastRemoteObject;
+import java.util.Arrays;
+
+import calculatriceComplexe.*;
+
+public class Serveur {
+  public static void main(String args[]) {
+    int port  = 1099;
+
+    if(args.length==1)
+        port = Integer.parseInt(args[0]);
+
+    try {
+        Calculatrice stub = (Calculatrice)UnicastRemoteObject.exportObject(new CalculatriceImpl(), 0);
+        Registry registry = LocateRegistry.getRegistry(port);
+
+        if(!Arrays.asList(registry.list()).contains("CalculatriceComplexe"))
+            registry.bind("CalculatriceComplexe", stub);
+        else
+            registry.rebind("CalculatriceComplexe", stub);
+        System.out.println("Service CalculatriceComplexe lie au registre");
+
+    } catch (Exception e) {
+        System.out.println(e);
+    }
+  }
+}
+\end{lstlisting}
+
+Fichier \emph{Client.java}.
+% \vspace{-1.5ex}
+\begin{lstlisting}
+import java.rmi.registry.LocateRegistry;
+import java.rmi.registry.Registry;
+
+import calculatriceComplexe.*;
+
+public class Client {
+  public static void main(String args[]) {
+    String machine = "localhost";
+    int port = 1099;
+
+    try {
+    Registry registry = LocateRegistry.getRegistry(machine, port);
+    Calculatrice obj = (Calculatrice)registry.lookup("CalculatriceComplexe");
+
+    Complexe a = new Complexe(Integer.parseInt(args[0]), Integer.parseInt(args[1]));
+    Complexe b = new Complexe(Integer.parseInt(args[3]), Integer.parseInt(args[4]));
+    String operateur = args[2];
+
+    if(operateur.contains("+"))
+      System.out.println(obj.addition(a, b));
+    if(operateur.contains("-"))
+      System.out.println(obj.soustraction(a, b));
+    if(operateur.contains("x"))
+      System.out.println(obj.multiplication(a, b));
+    if(operateur.contains("/"))
+      System.out.println(obj.division(a, b));
+
+    } catch (Exception e) {
+    System.out.println("Client exception: " + e);
+    }
+  }
+}
+\end{lstlisting}
+
+Fichier \emph{Complexe.java} pour l'implémentation des nombres complexes.
+% \vspace{-1.5ex}
+\begin{lstlisting}
+package calculatriceComplexe;
+
+import java.io.Serializable;
+
+public class Complexe implements Serializable{
+    private final double re;   // the real part
+    private final double im;   // the imaginary part
+
+    public Complexe(double real, double imag) {...}
+    public String toString() {...}
+    public Complexe plus(Complexe b) {...}
+    public Complexe minus(Complexe b) {...}
+    public Complexe times(Complexe b) {...}
+    public Complexe reciprocal() {...}
+    public double re() { return re; }
+    public double im() { return im; }
+    public Complexe divides(Complexe b) {...}
+}
+
+\end{lstlisting}
+
+\end{document}
