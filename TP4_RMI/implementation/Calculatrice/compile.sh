@@ -1,14 +1,12 @@
-javac CalculatriceRMI/*.java
-cp CalculatriceRMI/*.class Serveur/CalculatriceRMI/
+javac calculatrice/*.java
+cp calculatrice/*.class serveur/calculatrice/
 
-cp CalculatriceRMI/Calculatrice.class Client/CalculatriceRMI/
-cp CalculatriceRMI/NombreNegatif.class Client/CalculatriceRMI/
+cp calculatrice/Calculatrice.class client/calculatrice/
+cp calculatrice/NombreNegatif.class client/calculatrice/
 
-cp CalculatriceRMI/Calculatrice.class rmiregistry/CalculatriceRMI/
-cp CalculatriceRMI/NombreNegatif.class rmiregistry/CalculatriceRMI/
+cp calculatrice/Calculatrice.class rmiregistry/calculatrice/
+cp calculatrice/NombreNegatif.class rmiregistry/calculatrice/
 
-cd Serveur
-javac *.java
+javac serveur/*.java
 
-cd ../Client
-javac *.java
+javac client/*.java
