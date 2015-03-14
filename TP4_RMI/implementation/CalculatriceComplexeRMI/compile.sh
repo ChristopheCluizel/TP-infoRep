@@ -1,14 +1,12 @@
-javac CalculatriceRMI/*.java
-cp CalculatriceRMI/*.class Serveur/CalculatriceRMI/
+javac calculatriceComplexe/*.java
+cp calculatriceComplexe/*.class serveur/calculatriceComplexe/
 
-cp CalculatriceRMI/Calculatrice.class Client/CalculatriceRMI/
-cp CalculatriceRMI/Complex.class Client/CalculatriceRMI/
+cp calculatriceComplexe/Calculatrice.class client/calculatriceComplexe/
+cp calculatriceComplexe/Complexe.class client/calculatriceComplexe/
 
-cp CalculatriceRMI/Calculatrice.class rmiregistry/CalculatriceRMI/
-cp CalculatriceRMI/Complex.class rmiregistry/CalculatriceRMI/
+cp calculatriceComplexe/Calculatrice.class rmiregistry/calculatriceComplexe/
+cp calculatriceComplexe/Complexe.class rmiregistry/calculatriceComplexe/
 
-cd Serveur
-javac *.java
+javac serveur/*.java
 
-cd ../Client
-javac *.java
+javac client/*.java

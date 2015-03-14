@@ -1,17 +1,18 @@
-package CalculatriceRMI;
+package calculatriceComplexe;
+
 import java.io.Serializable;
 
-public class Complex implements Serializable{
+public class Complexe implements Serializable{
     private final double re;   // the real part
     private final double im;   // the imaginary part
 
     // create a new object with the given real and imaginary parts
-    public Complex(double real, double imag) {
+    public Complexe(double real, double imag) {
         re = real;
         im = imag;
     }
 
-    // return a string representation of the invoking Complex object
+    // return a string representation of the invoking Complexe object
     public String toString() {
         if (im == 0) return re + "";
         if (re == 0) return im + "i";
@@ -23,37 +24,37 @@ public class Complex implements Serializable{
     public double abs()   { return Math.hypot(re, im); }  // Math.sqrt(re*re + im*im)
     public double phase() { return Math.atan2(im, re); }  // between -pi and pi
 
-    // return a new Complex object whose value is (this + b)
-    public Complex plus(Complex b) {
-        Complex a = this;             // invoking object
+    // return a new Complexe object whose value is (this + b)
+    public Complexe plus(Complexe b) {
+        Complexe a = this;             // invoking object
         double real = a.re + b.re;
         double imag = a.im + b.im;
-        return new Complex(real, imag);
+        return new Complexe(real, imag);
     }
 
-    // return a new Complex object whose value is (this - b)
-    public Complex minus(Complex b) {
-        Complex a = this;
+    // return a new Complexe object whose value is (this - b)
+    public Complexe minus(Complexe b) {
+        Complexe a = this;
         double real = a.re - b.re;
         double imag = a.im - b.im;
-        return new Complex(real, imag);
+        return new Complexe(real, imag);
     }
 
-    // return a new Complex object whose value is (this * b)
-    public Complex times(Complex b) {
-        Complex a = this;
+    // return a new Complexe object whose value is (this * b)
+    public Complexe times(Complexe b) {
+        Complexe a = this;
         double real = a.re * b.re - a.im * b.im;
         double imag = a.re * b.im + a.im * b.re;
-        return new Complex(real, imag);
+        return new Complexe(real, imag);
     }
 
-    // return a new Complex object whose value is the conjugate of this
-    public Complex conjugate() {  return new Complex(re, -im); }
+    // return a new Complexe object whose value is the conjugate of this
+    public Complexe conjugate() {  return new Complexe(re, -im); }
 
-    // return a new Complex object whose value is the reciprocal of this
-    public Complex reciprocal() {
+    // return a new Complexe object whose value is the reciprocal of this
+    public Complexe reciprocal() {
         double scale = re*re + im*im;
-        return new Complex(re / scale, -im / scale);
+        return new Complexe(re / scale, -im / scale);
     }
 
     // return the real or imaginary part
@@ -61,8 +62,8 @@ public class Complex implements Serializable{
     public double im() { return im; }
 
 
-    public Complex divides(Complex b) {
-        Complex a = this;
+    public Complexe divides(Complexe b) {
+        Complexe a = this;
         return a.times(b.reciprocal());
     }
 }

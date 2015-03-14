@@ -1,18 +1,16 @@
-package CalculatriceRMI;
-import CalculatriceRMI.Calculatrice;
-import CalculatriceRMI.Complex;
+package calculatriceComplexe;
 
 public class CalculatriceImpl implements Calculatrice {
-	public Complex addition(Complex a, Complex b) {
+	public Complexe addition(Complexe a, Complexe b) {
 		return a.plus(b);
 	}
-	public Complex soustraction(Complex a, Complex b) {
+	public Complexe soustraction(Complexe a, Complexe b) {
 	   return a.minus(b);
 	}
-	public Complex multiplication(Complex a, Complex b) {
+	public Complexe multiplication(Complexe a, Complexe b) {
 	  return a.times(b);
 	}
-	public Complex division(Complex a, Complex b) {
+	public Complexe division(Complexe a, Complexe b) {
 	  return a.divides(b);
 	}
 }
