@@ -11,6 +11,7 @@ compile_java:
 
 compile_rapport:
 	cd $(RAPPORTDIR) && pdflatex rapport.tex
+	make clean
 
 clean:
 	rm -rf $(SRCDIR)/HelloWorld/ $(RAPPORTDIR)/*.aux $(RAPPORTDIR)/*.log
