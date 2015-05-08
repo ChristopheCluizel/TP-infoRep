@@ -1,0 +1,228 @@
+\documentclass{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage[francais]{babel, varioref}
+\usepackage{graphicx}
+\usepackage{listings}
+
+\usepackage{xspace}
+\usepackage{amssymb}
+\usepackage{calc}
+\usepackage{listingsutf8}
+\usepackage{color}
+\usepackage{xcolor}
+
+%%%%%%%%%%%%%%%%%%%%%
+\usepackage{url}
+\usepackage[top=0.1cm,bottom=0.1cm,left=0.6cm,right=0.2cm]{geometry}
+\usepackage[final]{pdfpages}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%pour la coloration du code
+
+\definecolor{colFond}{rgb}{0.8,0.9,0.9}
+\definecolor{hellgelb}{rgb}{1,1,0.8}
+\definecolor{colKeys}{rgb}{0,0,1}
+\definecolor{colIdentifier}{rgb}{0,0,0}
+\definecolor{colComments}{rgb}{0,0.5,0}
+\definecolor{colString}{rgb}{0.62,0.12,0.94}
+
+\lstset{
+  language=JAVA,
+  float=hbp,
+  basicstyle=\ttfamily\small,
+  identifierstyle=\color{colIdentifier},
+  keywordstyle=\bf \color{colKeys},
+  stringstyle=\color{colString},
+  commentstyle=\color{colComments},
+  columns=flexible,
+  tabsize=3,
+  frame=single,
+  frame=shadowbox,
+  rulesepcolor=\color[gray]{0.5},
+  extendedchars=true,
+  showspaces=false,
+  showstringspaces=false,
+  %numbers=left,
+  firstnumber=1,
+  numberstyle=\tiny,
+  breaklines=true,
+  backgroundcolor=\color{hellgelb},
+  captionpos=b,
+  basicstyle=\ttfamily\scriptsize
+}
+
+\title{\vspace{-5ex}SOAP\vspace{-2ex}}
+\author{Alexandre \bsc{Brehmer} \& Christophe \bsc{Cluizel}}
+
+\begin{document}
+\maketitle
+\vspace{-6ex}
+
+TODO:
+\begin{itemize}
+  \item écrire l'interface côté serveur et sa classe concrète qui l'implémente
+  \item déployer le serveur sous JBOSS (définir la variable JBOSS\_HOME) et le lancer (\textbf{JBOSS\_HOME/bin/standalone.sh})
+  \item générer automatiquement les fichiers côté client, écrire le client et le lancer
+\end{itemize}
+
+Organisation des fichiers
+\begin{lstlisting}
+  + Client.
+    - src
+      * Client.java
+      * calculatrice
+        -> fichiers generes automatiquement
+  + serveur.
+    - Calculatrice.war
+    - WEB-INF
+      * web.xml
+    - calculatrice
+      * Calculatrice.java
+      * CalculatriceWS.java
+      * Complexe.java
+  + compileClient.sh.
+  + compileServeur.sh.
+  + runClient.sh.
+\end{lstlisting}
+
+Compilation et déploiement du serveur.
+\begin{lstlisting}[language=bash]
+# Clean des repertoires
+cd serveur; rm -Rf WEB-INF/classes; mkdir -p WEB-INF/classes
+# Compilation et generation du WAR
+javac -d WEB-INF/classes calculatrice/*.java; jar -cf Calculatrice.war WEB-INF;
+# Deploiement
+cp Calculatrice.war $JBOSS_HOME/standalone/deployments ;cd ..
+\end{lstlisting}
+
+Générer automatiquement les fichiers clients et les compiler
+\begin{lstlisting}[language=bash]
+# Clean des repertoires
+cd client; rm -Rf calculatrice; mkdir calculatrice; cd src; rm -Rf calculatrice
+# Recuperation du WSDL et generation des fichiers
+$JBOSS_HOME/bin/wsconsume.sh -k -o . http://localhost:8080/Calculatrice/CalculatriceWS?wsdl
+# Compilation du client
+javac -d .. Client.java
+mv calculatrice/*.class ../calculatrice; cd ../..
+\end{lstlisting}
+
+Exécuter le client.
+\begin{lstlisting}[language=bash]
+cd client; java Client $1 $2 $3 $4 $5; cd ..
+\end{lstlisting}
+
+Web.xml
+\begin{lstlisting}[language=xml]
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!DOCTYPE web-app PUBLIC
+"-//Sun Microsystems, Inc.//DTD Web Application 2.3//EN"
+"http://java.sun.com/dtd/web-app_2_3.dtd">
+<web-app>
+  <servlet>
+    <servlet-name>CalculatriceWS</servlet-name>
+    <servlet-class>calculatrice.CalculatriceWS</servlet-class>
+  </servlet>
+  <servlet-mapping>
+    <servlet-name>CalculatriceWS</servlet-name>
+    <url-pattern>/CalculatriceWS</url-pattern>
+  </servlet-mapping>
+</web-app>
+\end{lstlisting}
+
+Interface serveur de la Calculatrice
+\begin{lstlisting}[language=JAVA]
+package calculatrice;
+import javax.jws.WebService;
+import javax.jws.WebMethod;
+import javax.jws.WebParam;
+import javax.jws.soap.SOAPBinding;
+
+@WebService(name="Calculatrice")
+@SOAPBinding(style=SOAPBinding.Style.RPC)
+public interface Calculatrice {
+  @WebMethod(action="addition")
+  public Complexe addition(@WebParam(name="a") Complexe a, @WebParam(name="b") Complexe b);
+  @WebMethod(action="soustraction")
+  public Complexe soustraction(@WebParam(name="a") Complexe a, @WebParam(name="b") Complexe b);@WebMethod(action="multiplication")
+  public Complexe multiplication(@WebParam(name="a") Complexe a, @WebParam(name="b") Complexe b);
+  @WebMethod(action="division")
+  public Complexe division(@WebParam(name="a") Complexe a, @WebParam(name="b") Complexe b);
+}
+\end{lstlisting}
+
+Classe concrète serveur de la Calculatrice
+\begin{lstlisting}[language=JAVA]
+package calculatrice;
+import javax.jws.WebService;
+
+@WebService(endpointInterface="calculatrice.Calculatrice")
+public class CalculatriceWS implements Calculatrice {
+  @Override
+  public Complexe addition(Complexe a, Complexe b)
+  {
+    return new Complexe(a.getPartieReelle() + b.getPartieReelle(), a.getPartieImaginaire() + b.getPartieImaginaire());
+  }
+  @Override
+  public Complexe soustraction(Complexe a, Complexe b)
+  {
+    return new Complexe(a.getPartieReelle() - b.getPartieReelle(), a.getPartieImaginaire() - b.getPartieImaginaire());
+  }
+  @Override
+  public Complexe division(Complexe a, Complexe b)
+  {
+    int reel = (a.getPartieReelle() * b.getPartieReelle() + a.getPartieImaginaire() * b.getPartieImaginaire()) / (b.getPartieReelle() * b.getPartieReelle() +
+    int imaginaire = (a.getPartieReelle() * b.getPartieImaginaire() - b.getPartieReelle() * a.getPartieImaginaire()) / (b.getPartieReelle() * b.getPartieReel
+    return new Complexe(reel, imaginaire);
+  }
+  @Override
+  public Complexe multiplication(Complexe a, Complexe b)
+  {
+    return new Complexe(
+    a.getPartieReelle() * b.getPartieReelle() - a.getPartieImaginaire() * b.getPartieImaginaire(),
+    a.getPartieReelle() * b.getPartieImaginaire() + b.getPartieReelle() * a.getPartieImaginaire());
+  }
+}
+\end{lstlisting}
+
+Client de la calculatrice
+\begin{lstlisting}[language=JAVA]
+import calculatrice.*;
+
+public class Client {
+  public static void main(String[] args) throws java.lang.Exception {
+    Calculatrice calculatrice = (new calculatrice.CalculatriceWSService()).getCalculatriceWSPort();
+    int reelA = Integer.parseInt(args[0]);
+    int imA = Integer.parseInt(args[1]);
+    String op = args[2];
+    int reelB = Integer.parseInt(args[3]);
+    int imB = Integer.parseInt(args[4]);
+    Complexe a = new Complexe();
+    a.setReel(reelA);
+    a.setImaginaire(imA);
+    Complexe b = new Complexe();
+    b.setReel(reelB);
+    b.setImaginaire(imB);
+    Complexe res = new Complexe();
+    if (op.equals("+")) {
+      res = calculatrice.addition(a, b);
+      System.out.println(res.getReel() + " + " + res.getImaginaire() + "i");
+    }
+    if (op.equals("-")) {
+      res = calculatrice.soustraction(a, b);
+      System.out.println(res.getReel() + " + " + res.getImaginaire() + "i");
+    }
+    if (op.equals("mul")) {
+      res = calculatrice.multiplication(a, b);
+      System.out.println(res.getReel() + " + " + res.getImaginaire() + "i");
+    }
+    if (op.equals("div")) {
+      res = calculatrice.division(a, b);
+      System.out.println(res.getReel() + " + " + res.getImaginaire() + "i");
+    }
+  }
+}
+\end{lstlisting}
+
+\end{document}
