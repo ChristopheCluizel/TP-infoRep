@@ -1,0 +1,197 @@
+\documentclass{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage[francais]{babel, varioref}
+\usepackage{graphicx}
+\usepackage{listings}
+
+\usepackage{xspace}
+\usepackage{amssymb}
+\usepackage{calc}
+\usepackage{listingsutf8}
+\usepackage{color}
+\usepackage{xcolor}
+
+%%%%%%%%%%%%%%%%%%%%%
+\usepackage{url}
+\usepackage[top=0.1cm,bottom=0.1cm,left=0.6cm,right=0.2cm]{geometry}
+\usepackage[final]{pdfpages}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%pour la coloration du code
+
+\definecolor{colFond}{rgb}{0.8,0.9,0.9}
+\definecolor{hellgelb}{rgb}{1,1,0.8}
+\definecolor{colKeys}{rgb}{0,0,1}
+\definecolor{colIdentifier}{rgb}{0,0,0}
+\definecolor{colComments}{rgb}{0,0.5,0}
+\definecolor{colString}{rgb}{0.62,0.12,0.94}
+
+\lstset{
+  language=JAVA,
+  float=hbp,
+  basicstyle=\ttfamily\small,
+  identifierstyle=\color{colIdentifier},
+  keywordstyle=\bf \color{colKeys},
+  stringstyle=\color{colString},
+  commentstyle=\color{colComments},
+  columns=flexible,
+  tabsize=3,
+  frame=single,
+  frame=shadowbox,
+  rulesepcolor=\color[gray]{0.5},
+  extendedchars=true,
+  showspaces=false,
+  showstringspaces=false,
+  %numbers=left,
+  firstnumber=1,
+  numberstyle=\tiny,
+  breaklines=true,
+  backgroundcolor=\color{hellgelb},
+  captionpos=b,
+}
+
+\title{\vspace{-5ex}EJB\vspace{-2ex}}
+\author{Alexandre \bsc{Brehmer} \& Christophe \bsc{Cluizel}}
+
+\begin{document}
+\maketitle
+\vspace{-6ex}
+
+TODO:
+\begin{itemize}
+	\item coder les interfaces Local et Remote.
+	\item coder l'implémentation de ces interfaces.
+	\item creer utilisateur JBOSS : \textbf{JBOSS\_HOME/bin/add\_user.sh}
+	\item remplir \textbf{Client/jndi.properties} avec les infos de l'utilisateur cree.
+	\item déployer le serveur.
+	\item coder le client et l'executer.
+\end{itemize}
+
+Organisation des fichiers
+\begin{lstlisting}
+      + Calculatrice.
+            - Calculatrice.java.
+            - CalculatriceLocale.java.
+            - CalculatriceRemote.java.
+            - Complexe.java.
+            - DivisionParZero.java.
+      + Client.
+            - Client.java.
+            - jboss-ejb-client.properties.
+            - jndi.properties.
+       - compile.sh.
+       - runClient.sh.
+\end{lstlisting}
+
+Compilation serveur et deploiement du serveur.
+\begin{lstlisting}[language=bash]
+export JBOSS_HOME=/tmp/jboss CLASSPATH=.:$JBOSS_HOME/modules/javax/ejb/api/main/jboss-ejb-api_3.1_spec-1.0.1.Final.jar 
+# Compilation du serveur et de ses classes
+javac -cp $CLASSPATH Calculatrice/*.java
+# Deploiement du .jar
+jar cvf Calculatrice.jar Calculatrice/*.class
+cp Calculatrice.jar $JBOSS_HOME/standalone/deployments
+# Copie des classes necessaires au client
+cp Calculatrice/CalculatriceRemote.class Client/Calculatrice/
+cp Calculatrice/Complexe.class Client/Calculatrice/
+cp Calculatrice/DivisionParZero.class Client/Calculatrice/
+# Compilation du client
+javac Client/Client.java
+\end{lstlisting}
+
+Executer le client.
+\begin{lstlisting}[language=bash]
+export JBOSS_HOME=/tmp/jboss CLASSPATH=$JBOSS_HOME/bin/client/jboss-client.jar:. cd Client
+java -cp $CLASSPATH Client $1 $2 $3 $4 $5
+cd ..
+\end{lstlisting}
+
+jndi.properties
+\begin{lstlisting}[language=bash]
+java.naming.factory.initial=org.jboss.naming.remote.client.InitialContextFactory java.naming.provider.url=remote://127.0.0.1:4447
+java.naming.security.principal=bob
+java.naming.security.credentials=leponge
+\end{lstlisting}
+
+jbis-ejb-client.properties
+\begin{lstlisting}[language=bash]
+endpoint.name=client-endpoint
+remote.connectionprovider.create.options.org.xnio.Options.SSL_ENABLED=false
+remote.connections=default
+remote.connection.default.host=127.0.0.1
+remote.connection.default.port=4447
+\end{lstlisting}
+
+
+CalculatriceLocal.java
+\begin{lstlisting}[language=JAVA]
+package Calculatrice;
+import java.rmi.Remote;
+import java.rmi.RemoteException; import java.io.Serializable; import javax.ejb.Local;
+
+@Local
+public interface CalculatriceLocal extends Remote, Serializable {
+public Complexe addition(Complexe a, Complexe b) throws RemoteException;
+public Complexe soustraction(Complexe a, Complexe b) throws RemoteException;
+public Complexe division(Complexe a, Complexe b) throws RemoteException, DivisionParZero;
+public Complexe multiplication(Complexe a, Complexe b) throws RemoteException;
+\end{lstlisting}
+
+CalculatriceRemote.java
+\begin{lstlisting}[language=JAVA]
+package Calculatrice;
+import java.rmi.RemoteException; import javax.ejb.Remote;
+
+@Remote
+public interface CalculatriceRemote {
+public Complexe addition(Complexe a, Complexe b) throws RemoteException;
+public Complexe soustraction(Complexe a, Complexe b) throws RemoteException;
+public Complexe division(Complexe a, Complexe b) throws RemoteException, DivisionParZero;
+public Complexe multiplication(Complexe a, Complexe b) throws RemoteException;
+}
+\end{lstlisting}
+
+Calculatrice.java implementation Serveur
+\begin{lstlisting}[language=JAVA]
+package Calculatrice;
+import java.rmi.RemoteException; import javax.ejb.Stateless;
+
+@Stateless
+public class Calculatrice implements CalculatriceLocal, CalculatriceRemote {
+public Complexe addition(Complexe a, Complexe b) throws RemoteException {return a.plus(b);}
+public Complexe soustraction(Complexe a, Complexe b) throws RemoteException {return a.minus(b);}
+public Complexe division(Complexe a, Complexe b) throws RemoteException, DivisionParZero {`return a.divide(b);}
+public Complexe multiplication(Complexe a, Complexe b) throws RemoteException {return a.times(b);}
+}
+\end{lstlisting}
+
+Calculatrice.java implementation Client
+\begin{lstlisting}[language=JAVA]
+import javax.naming.InitialContext; import Calculatrice.CalculatriceRemote; import Calculatrice.Complexe;
+public class Client {
+  public static void main(String[] args) {
+    try {
+      CalculatriceRemote obj = (CalculatriceRemote)
+
+      InitialContext.doLookup("Calculatrice/Calculatrice!Calculatrice.CalculatriceRemote");
+      Complexe a = new Complexe(Integer.parseInt(args[0]), Integer.parseInt(args[1])); Complexe b = new Complexe(Integer.parseInt(args[3]), Integer.parseInt(args[4])); Complexe res = new Complexe(0, 0);
+      if (args[2].equals("add"))
+        res = obj.addition(a, b);
+      if (args[2].equals("sub"))
+        res = obj.soustraction(a, b);
+      if (args[2].equals("div"))
+        res = obj.division(a, b);
+      if (args[2].equals("tim"))
+        res = obj.multiplication(a, b);
+      System.out.println("Resultat : " + res);
+    } catch (Exception e) {
+      System.out.println(e);
+      e.printStackTrace();
+      }
+  }
+}
+\end{lstlisting}
+
+\end{document}
