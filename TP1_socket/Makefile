@@ -18,6 +18,7 @@ compil_java:
 
 compil_rapport:
 	cd $(RAPPORTDIR) && pdflatex rapport.tex
+	make clean
 
 clean:
 	rm -rf $(SRCDIR)/*.o $(SRCDIR)/*.class $(RAPPORTDIR)/*.aux $(RAPPORTDIR)/*.log
